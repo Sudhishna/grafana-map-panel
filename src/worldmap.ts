@@ -296,7 +296,7 @@ export default class WorldMap {
     });
 
     this.createClickthrough(circle, dataPoint);
-    const content = this.getPopupContent(dataPoint);
+    const content = this.getPopupContent(dataPoint, true);
     this.createPopup(circle, content);
     return circle;
   }
@@ -318,7 +318,7 @@ export default class WorldMap {
 
       // Re-create popup.
       circle.unbindPopup();
-      const content = this.getPopupContent(dataPoint);
+      const content = this.getPopupContent(dataPoint, true);
       this.createPopup(circle, content);
 
       // Re-create clickthrough-link.
@@ -417,11 +417,11 @@ export default class WorldMap {
   extendPopupContent(circle, dataPoint) {
     const popup = circle.getPopup();
     let popupContent = popup._content;
-    popupContent += `\n${this.getPopupContent(dataPoint)}`;
+    popupContent += `\n${this.getPopupContent(dataPoint, false)}`;
     circle.setPopupContent(popupContent);
   }
 
-  getPopupContent(dataPoint) {
+  getPopupContent(dataPoint, contentHead) {
     let unit;
 
     let locationName = dataPoint.locationName;
@@ -448,15 +448,29 @@ export default class WorldMap {
         (key: string) => key.startsWith(fieldPrefix) && !specialFields.includes(key)
       );
 
+      let popupFilter = dataPoint.popupFilter.split(',');
+      console.log(popupFilter);
+      let popupHeader = dataPoint.popupHeader;
+      console.log(popupHeader);
+      let asNumber = '';
       let freeDataDisplay = freeDataFields
         .map((field: string) => {
-          let name = field.slice(fieldPrefix.length);
+          //let name = field.slice(fieldPrefix.length);
           let value = dataPoint[field];
-          return `<br />${name}: ${value}`;
+          if (popupFilter.includes(value)) {
+            return `${value}`;
+          } else if (value === popupHeader) {
+            if (contentHead) {
+              asNumber = `${value}`;
+            }
+            return ``;
+          } else {
+            return ``;
+          }
         })
         .join('');
 
-      return `${locationName}: ${value} ${unit || ''}${freeDataDisplay}`.trim();
+      return `${asNumber}${unit || ''}${freeDataDisplay}`.trim();
     }
   }
 
@@ -481,7 +495,7 @@ export default class WorldMap {
   getColor(dataPoint) {
     switch (this.ctrl.settings.colorMode) {
       case ColorModes.categories.id:
-        return this.getCategoryColor(dataPoint.locationName);
+        return this.getCategoryColor(dataPoint.category);
       case ColorModes.threshold.id:
       default:
         return this.getThresholdColor(dataPoint.value);
